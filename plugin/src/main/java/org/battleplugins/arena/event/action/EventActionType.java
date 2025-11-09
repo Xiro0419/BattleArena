@@ -1,28 +1,7 @@
 package org.battleplugins.arena.event.action;
 
 import org.battleplugins.arena.config.DocumentationSource;
-import org.battleplugins.arena.event.action.types.BroadcastAction;
-import org.battleplugins.arena.event.action.types.ChangeGamemodeAction;
-import org.battleplugins.arena.event.action.types.ChangeRoleAction;
-import org.battleplugins.arena.event.action.types.ClearEffectsAction;
-import org.battleplugins.arena.event.action.types.ClearInventoryAction;
-import org.battleplugins.arena.event.action.types.DelayAction;
-import org.battleplugins.arena.event.action.types.FlightAction;
-import org.battleplugins.arena.event.action.types.GiveEffectsAction;
-import org.battleplugins.arena.event.action.types.GiveItemAction;
-import org.battleplugins.arena.event.action.types.HealthAction;
-import org.battleplugins.arena.event.action.types.JoinRandomTeamAction;
-import org.battleplugins.arena.event.action.types.KillEntitiesAction;
-import org.battleplugins.arena.event.action.types.LeaveAction;
-import org.battleplugins.arena.event.action.types.PlaySoundAction;
-import org.battleplugins.arena.event.action.types.ResetStateAction;
-import org.battleplugins.arena.event.action.types.RespawnAction;
-import org.battleplugins.arena.event.action.types.RestoreAction;
-import org.battleplugins.arena.event.action.types.RunCommandAction;
-import org.battleplugins.arena.event.action.types.SendMessageAction;
-import org.battleplugins.arena.event.action.types.StoreAction;
-import org.battleplugins.arena.event.action.types.TeardownAction;
-import org.battleplugins.arena.event.action.types.TeleportAction;
+import org.battleplugins.arena.event.action.types.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -62,6 +41,29 @@ public final class EventActionType<T extends EventAction> {
     public static final EventActionType<StoreAction> STORE = new EventActionType<>("store", StoreAction.class, StoreAction::new);
     public static final EventActionType<TeardownAction> TEARDOWN = new EventActionType<>("teardown", TeardownAction.class, TeardownAction::new);
     public static final EventActionType<TeleportAction> TELEPORT = new EventActionType<>("teleport", TeleportAction.class, TeleportAction::new);
+    // 应用药水效果
+    public static final EventActionType<ApplyEffectAction> APPLY_EFFECT =
+            new EventActionType<>("apply-effect", ApplyEffectAction.class, ApplyEffectAction::new);
+
+    // 显示标题
+    public static final EventActionType<TitleAction> TITLE =
+            new EventActionType<>("title", TitleAction.class, TitleAction::new);
+
+    // 启动时间事件系统
+    public static final EventActionType<StartTimedEventsAction> START_TIMED_EVENTS =
+            new EventActionType<>("start-timed-events", StartTimedEventsAction.class, StartTimedEventsAction::new);
+
+    // 停止时间事件系统
+    public static final EventActionType<StopTimedEventsAction> STOP_TIMED_EVENTS =
+            new EventActionType<>("stop-timed-events", StopTimedEventsAction.class, StopTimedEventsAction::new);
+
+    // 启动周期事件系统
+    public static final EventActionType<StartPeriodicEventsAction> START_PERIODIC_EVENTS =
+            new EventActionType<>("start-periodic-events", StartPeriodicEventsAction.class, StartPeriodicEventsAction::new);
+
+    // 停止周期事件系统
+    public static final EventActionType<StopPeriodicEventsAction> STOP_PERIODIC_EVENTS =
+            new EventActionType<>("stop-periodic-events", StopPeriodicEventsAction.class, StopPeriodicEventsAction::new);
 
     private final String name;
     private final Class<T> clazz;

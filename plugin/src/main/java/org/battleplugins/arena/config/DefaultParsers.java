@@ -6,10 +6,7 @@ import org.battleplugins.arena.Arena;
 import org.battleplugins.arena.BattleArena;
 import org.battleplugins.arena.competition.CompetitionType;
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType;
-import org.battleplugins.arena.config.context.EventContextProvider;
-import org.battleplugins.arena.config.context.OptionContextProvider;
-import org.battleplugins.arena.config.context.PhaseContextProvider;
-import org.battleplugins.arena.config.context.VictoryConditionContextProvider;
+import org.battleplugins.arena.config.context.*;
 import org.battleplugins.arena.util.CustomEffect;
 import org.battleplugins.arena.util.IntRange;
 import org.battleplugins.arena.util.PositionWithRotation;
@@ -82,6 +79,16 @@ final class DefaultParsers {
 
         ArenaConfigParser.registerProvider(BlockData.class, parseString(Bukkit::createBlockData));
         ArenaConfigParser.registerProvider(CustomEffect.class, new CustomEffectParser<>());
+
+        ArenaConfigParser.registerContextProvider(
+                TimedEventsContextProvider.class,
+                new TimedEventsContextProvider()
+        );
+
+        ArenaConfigParser.registerContextProvider(
+                PeriodicEventsContextProvider.class,
+                new PeriodicEventsContextProvider()
+        );
     }
 
     private static <T> ArenaConfigParser.Parser<T> parseString(Function<String, T> parser) {

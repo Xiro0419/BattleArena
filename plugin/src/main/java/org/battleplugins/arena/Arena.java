@@ -3,6 +3,7 @@ package org.battleplugins.arena;
 import org.battleplugins.arena.command.ArenaCommandExecutor;
 import org.battleplugins.arena.competition.Competition;
 import org.battleplugins.arena.competition.CompetitionType;
+import org.battleplugins.arena.competition.event.TimedEventManager;
 import org.battleplugins.arena.competition.map.LiveCompetitionMap;
 import org.battleplugins.arena.competition.map.MapFactory;
 import org.battleplugins.arena.competition.phase.CompetitionPhase;
@@ -12,10 +13,7 @@ import org.battleplugins.arena.config.ArenaOption;
 import org.battleplugins.arena.config.ConfigHolder;
 import org.battleplugins.arena.config.DocumentationSource;
 import org.battleplugins.arena.config.Scoped;
-import org.battleplugins.arena.config.context.EventContextProvider;
-import org.battleplugins.arena.config.context.OptionContextProvider;
-import org.battleplugins.arena.config.context.PhaseContextProvider;
-import org.battleplugins.arena.config.context.VictoryConditionContextProvider;
+import org.battleplugins.arena.config.context.*;
 import org.battleplugins.arena.event.ArenaEventManager;
 import org.battleplugins.arena.event.ArenaEventType;
 import org.battleplugins.arena.event.ArenaListener;
@@ -105,6 +103,20 @@ public class Arena implements ArenaLike, ArenaListener, ConfigHolder, Resolvable
 
     @ArenaOption(name = "modules", description = "The modules to enable for this arena.")
     private List<String> modules;
+
+    @ArenaOption(
+            name = "timed-events",
+            description = "定时触发的事件配置",
+            contextProvider = TimedEventsContextProvider.class
+    )
+    private Map<String, TimedEventManager.TimedEvent> timedEvents;
+
+    @ArenaOption(
+            name = "periodic-events",
+            description = "周期性触发的事件配置",
+            contextProvider = PeriodicEventsContextProvider.class
+    )
+    private Map<String, TimedEventManager.PeriodicEvent> periodicEvents;
 
     private final ArenaEventManager eventManager;
     private final Map<String, ConfigurationSection> config = new HashMap<>();
@@ -292,6 +304,20 @@ public class Arena implements ArenaLike, ArenaListener, ConfigHolder, Resolvable
      */
     public final ArenaEventManager getEventManager() {
         return this.eventManager;
+    }
+
+    /**
+     * 获取所有定时事件
+     */
+    public Map<String, TimedEventManager.TimedEvent> getTimedEvents() {
+        return timedEvents != null ? Map.copyOf(timedEvents) : Map.of();
+    }
+
+    /**
+     * 获取所有周期性事件
+     */
+    public Map<String, TimedEventManager.PeriodicEvent> getPeriodicEvents() {
+        return periodicEvents != null ? Map.copyOf(periodicEvents) : Map.of();
     }
 
     /**
