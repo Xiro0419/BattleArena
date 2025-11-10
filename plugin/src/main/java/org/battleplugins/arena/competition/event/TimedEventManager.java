@@ -4,6 +4,7 @@ import org.battleplugins.arena.Arena;
 import org.battleplugins.arena.ArenaPlayer;
 import org.battleplugins.arena.competition.LiveCompetition;
 import org.battleplugins.arena.config.ArenaOption;
+import org.battleplugins.arena.config.context.TimedEventActionsContextProvider;
 import org.battleplugins.arena.event.action.EventAction;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitTask;
@@ -175,13 +176,18 @@ public class TimedEventManager {
      * 定时事件类
      */
     public static class TimedEvent {
-        @ArenaOption(name = "trigger-time", description = "触发时间", required = true)
+        @ArenaOption(name = "trigger-time", description = "觸發時間", required = true)
         private Duration triggerTime;
 
-        @ArenaOption(name = "trigger-from", description = "从哪个阶段开始计算")
+        @ArenaOption(name = "trigger-from", description = "從哪個階段開始計算")
         private String triggerFrom = "ingame-start";
 
-        @ArenaOption(name = "events", description = "要执行的事件", required = true)
+        @ArenaOption(
+                name = "events",
+                description = "要執行的事件",
+                required = true,
+                contextProvider = TimedEventActionsContextProvider.class
+        )
         private List<EventAction> actions;
 
         public TimedEvent() {

@@ -27,6 +27,9 @@ final class DefaultParsers {
         ArenaConfigParser.registerContextProvider(OptionContextProvider.class, new OptionContextProvider());
         ArenaConfigParser.registerContextProvider(PhaseContextProvider.class, new PhaseContextProvider());
         ArenaConfigParser.registerContextProvider(VictoryConditionContextProvider.class, new VictoryConditionContextProvider());
+        ArenaConfigParser.registerContextProvider(TimedEventsContextProvider.class, new TimedEventsContextProvider());
+        ArenaConfigParser.registerContextProvider(PeriodicEventsContextProvider.class, new PeriodicEventsContextProvider());
+        ArenaConfigParser.registerContextProvider(TimedEventActionsContextProvider.class, new TimedEventActionsContextProvider());
 
         ArenaConfigParser.registerProvider(Duration.class, new DurationParser());
         ArenaConfigParser.registerProvider(ItemStack.class, new ItemStackParser());
@@ -79,16 +82,6 @@ final class DefaultParsers {
 
         ArenaConfigParser.registerProvider(BlockData.class, parseString(Bukkit::createBlockData));
         ArenaConfigParser.registerProvider(CustomEffect.class, new CustomEffectParser<>());
-
-        ArenaConfigParser.registerContextProvider(
-                TimedEventsContextProvider.class,
-                new TimedEventsContextProvider()
-        );
-
-        ArenaConfigParser.registerContextProvider(
-                PeriodicEventsContextProvider.class,
-                new PeriodicEventsContextProvider()
-        );
     }
 
     private static <T> ArenaConfigParser.Parser<T> parseString(Function<String, T> parser) {
