@@ -2,12 +2,14 @@ package org.battleplugins.arena.command;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.battleplugins.arena.Arena;
 import org.battleplugins.arena.ArenaPlayer;
 import org.battleplugins.arena.competition.Competition;
 import org.battleplugins.arena.competition.JoinResult;
 import org.battleplugins.arena.competition.LiveCompetition;
 import org.battleplugins.arena.competition.PlayerRole;
+import org.battleplugins.arena.competition.event.TimedEventManager;
 import org.battleplugins.arena.competition.map.CompetitionMap;
 import org.battleplugins.arena.competition.map.LiveCompetitionMap;
 import org.battleplugins.arena.competition.map.MapType;
@@ -18,6 +20,7 @@ import org.battleplugins.arena.editor.ArenaEditorWizards;
 import org.battleplugins.arena.editor.WizardStage;
 import org.battleplugins.arena.editor.context.MapCreateContext;
 import org.battleplugins.arena.editor.type.MapOption;
+import org.battleplugins.arena.event.action.types.StartTimedEventsAction;
 import org.battleplugins.arena.event.player.ArenaLeaveEvent;
 import org.battleplugins.arena.feature.party.Parties;
 import org.battleplugins.arena.feature.party.Party;
@@ -27,10 +30,12 @@ import org.battleplugins.arena.options.ArenaOptionType;
 import org.battleplugins.arena.options.TeamSelection;
 import org.battleplugins.arena.options.types.BooleanArenaOption;
 import org.battleplugins.arena.team.ArenaTeam;
+import org.battleplugins.arena.util.Util;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -474,6 +479,193 @@ public class ArenaCommandExecutor extends BaseCommandExecutor {
 
             String playersText = max == Integer.MAX_VALUE ? " (" + players + ")" : " (" + players + "/" + max + ")";
             player.sendMessage(Component.text("- ", NamedTextColor.GRAY).append(team.getFormattedName()).append(Component.text(playersText, Messages.PRIMARY_COLOR)));
+        }
+    }
+
+    @ArenaCommand(commands = "events", description = "查看当前竞技场的事件状态", permissionNode = "events")
+    public void onEventsCommand(Player player) {
+        ArenaPlayer arenaPlayer = ArenaPlayer.getArenaPlayer(player);
+        if (arenaPlayer == null) {
+            player.sendMessage(Component.text("你必须在竞技场中才能使用此指令！")
+                    .color(NamedTextColor.RED));
+            return;
+        }
+
+        Competition<?> competition = arenaPlayer.getCompetition();
+        if (!(competition instanceof LiveCompetition<?> liveCompetition)) {
+            player.sendMessage(Component.text("无法获取竞技场信息！")
+                    .color(NamedTextColor.RED));
+            return;
+        }
+
+        TimedEventManager manager = StartTimedEventsAction.getEventManager(competition);
+        if (manager == null) {
+            player.sendMessage(Component.text("当前竞技场没有启用时间事件系统！")
+                    .color(NamedTextColor.YELLOW));
+            return;
+        }
+
+        displayEventStatus(player, manager);
+    }
+
+    private void displayEventStatus(Player player, TimedEventManager manager) {
+        Component header = Component.text("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                .color(NamedTextColor.GOLD)
+                .decorate(TextDecoration.BOLD);
+
+        Component title = Component.text("⏰ 竞技场事件状态")
+                .color(NamedTextColor.YELLOW)
+                .decorate(TextDecoration.BOLD);
+
+        player.sendMessage(header);
+        player.sendMessage(title);
+        player.sendMessage(Component.empty());
+
+        // 显示当前时间
+        Duration timeSinceStart = manager.getTimeSincePhaseStart();
+        player.sendMessage(Component.text("🕐 当前游戏时间: ")
+                .color(NamedTextColor.GRAY)
+                .append(Component.text(Util.toTimeStringShort(timeSinceStart))
+                        .color(NamedTextColor.AQUA)));
+
+        player.sendMessage(Component.empty());
+
+        // 显示定时事件
+        displayTimedEvents(player, manager);
+
+        player.sendMessage(Component.empty());
+
+        // 显示周期性事件
+        displayPeriodicEvents(player, manager);
+
+        player.sendMessage(header);
+    }
+
+    private void displayTimedEvents(Player player, TimedEventManager manager) {
+        player.sendMessage(Component.text("📋 定时事件:")
+                .color(NamedTextColor.GOLD)
+                .decorate(TextDecoration.BOLD));
+
+        Map<String, TimedEventManager.TimedEvent> timedEvents = manager.getTimedEvents();
+        if (timedEvents.isEmpty()) {
+            player.sendMessage(Component.text("  无定时事件")
+                    .color(NamedTextColor.GRAY));
+            return;
+        }
+
+        long currentTime = System.currentTimeMillis();
+        long phaseStartTime = manager.getPhaseStartTime();
+
+        for (Map.Entry<String, TimedEventManager.TimedEvent> entry : timedEvents.entrySet()) {
+            String eventId = entry.getKey();
+            TimedEventManager.TimedEvent event = entry.getValue();
+            TimedEventManager.EventExecutionInfo info = manager.getEventExecutionInfo(eventId);
+
+            Component status;
+            Component timeInfo;
+
+            if (info.isExecuted()) {
+                // 已执行
+                status = Component.text("✓ ")
+                        .color(NamedTextColor.GREEN)
+                        .decorate(TextDecoration.BOLD);
+
+                long executedTime = info.getLastExecutionTime() - phaseStartTime;
+                timeInfo = Component.text(" (已于 " +
+                                Util.toTimeStringShort(Duration.ofMillis(executedTime)) + " 执行)")
+                        .color(NamedTextColor.GRAY);
+            } else {
+                // 未执行
+                status = Component.text("⏳ ")
+                        .color(NamedTextColor.YELLOW);
+
+                long timeUntilExecution = info.getScheduledExecutionTime() - currentTime;
+                if (timeUntilExecution > 0) {
+                    timeInfo = Component.text(" (还需 " +
+                                    Util.toTimeStringShort(Duration.ofMillis(timeUntilExecution)) + ")")
+                            .color(NamedTextColor.AQUA);
+                } else {
+                    timeInfo = Component.text(" (即将执行)")
+                            .color(NamedTextColor.LIGHT_PURPLE);
+                }
+            }
+
+            Component eventLine = Component.text("  ")
+                    .append(status)
+                    .append(Component.text(eventId)
+                            .color(NamedTextColor.WHITE))
+                    .append(timeInfo);
+
+            player.sendMessage(eventLine);
+        }
+
+        // 显示下一个即将触发的事件
+        Map.Entry<String, TimedEventManager.TimedEvent> nextEvent = manager.getNextTimedEvent();
+        if (nextEvent != null) {
+            player.sendMessage(Component.empty());
+            player.sendMessage(Component.text("⏭ 下一个事件: ")
+                    .color(NamedTextColor.YELLOW)
+                    .append(Component.text(nextEvent.getKey())
+                            .color(NamedTextColor.AQUA)
+                            .decorate(TextDecoration.BOLD)));
+        }
+    }
+
+    private void displayPeriodicEvents(Player player, TimedEventManager manager) {
+        player.sendMessage(Component.text("🔄 周期性事件:")
+                .color(NamedTextColor.GOLD)
+                .decorate(TextDecoration.BOLD));
+
+        Map<String, TimedEventManager.PeriodicEvent> periodicEvents = manager.getPeriodicEvents();
+        if (periodicEvents.isEmpty()) {
+            player.sendMessage(Component.text("  无周期性事件")
+                    .color(NamedTextColor.GRAY));
+            return;
+        }
+
+        long currentTime = System.currentTimeMillis();
+
+        for (Map.Entry<String, TimedEventManager.PeriodicEvent> entry : periodicEvents.entrySet()) {
+            String eventId = entry.getKey();
+            TimedEventManager.PeriodicEvent event = entry.getValue();
+            TimedEventManager.EventExecutionInfo info = manager.getEventExecutionInfo(eventId);
+
+            Component status;
+            Component timeInfo;
+
+            if (info.isExecuted()) {
+                // 已激活
+                status = Component.text("▶ ")
+                        .color(NamedTextColor.GREEN)
+                        .decorate(TextDecoration.BOLD);
+
+                long nextExecutionTime = info.getNextExecutionTime();
+                long timeUntilNext = nextExecutionTime - currentTime;
+
+                timeInfo = Component.text(" (间隔: " +
+                                Util.toTimeStringShort(event.getInterval()) +
+                                ", 下次: " +
+                                Util.toTimeStringShort(Duration.ofMillis(timeUntilNext)) +
+                                ", 已执行 " + info.getExecutionCount() + " 次)")
+                        .color(NamedTextColor.GRAY);
+            } else {
+                // 未激活
+                status = Component.text("⏸ ")
+                        .color(NamedTextColor.YELLOW);
+
+                long timeUntilStart = info.getScheduledExecutionTime() - currentTime;
+                timeInfo = Component.text(" (将于 " +
+                                Util.toTimeStringShort(Duration.ofMillis(timeUntilStart)) + " 后开始)")
+                        .color(NamedTextColor.AQUA);
+            }
+
+            Component eventLine = Component.text("  ")
+                    .append(status)
+                    .append(Component.text(eventId)
+                            .color(NamedTextColor.WHITE))
+                    .append(timeInfo);
+
+            player.sendMessage(eventLine);
         }
     }
 
